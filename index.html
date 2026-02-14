@@ -1,551 +1,109 @@
-<!doctype html>
-<html lang="ru">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Liquid Glass Playground</title>
-  <style>
-    :root{
-      --bg-url: none;
-
-      --glass-w: 320px;
-      --glass-h: 220px;
-
-      --blur: 18px;
-      --opacity: 0.14;
-      --border: 0.22;
-      --highlight: 0.55;
-
-      --warp: 18;         /* сила преломления */
-      --warp-scale: 55;   /* размер волн */
-      --warp-speed: 0.9;  /* скорость анимации */
-
-      --shape: rounded;   /* rounded | circle | pill | blob */
-      --radius: 28px;
-    }
-
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
-    body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color:#fff;
-      background:#0b0f18;
-      overflow:hidden;
-    }
-
-    /* Фон */
-    .stage{
-      position:fixed; inset:0;
-      background:
-        radial-gradient(1200px 800px at 20% 20%, rgba(140,200,255,.20), transparent 60%),
-        radial-gradient(1000px 700px at 80% 30%, rgba(255,140,200,.14), transparent 62%),
-        radial-gradient(900px 900px at 60% 90%, rgba(180,255,170,.12), transparent 55%),
-        linear-gradient(180deg, #0b0f18, #090b12);
-      background-size: cover;
-      background-position:center;
-    }
-    .stage.hasImage{
-      background-image: var(--bg-url);
-      background-size: cover;
-      background-position:center;
-    }
-
-    /* Панель управления */
-    .ui{
-      position:fixed;
-      top:16px; left:16px;
-      width:min(420px, calc(100vw - 32px));
-      background: rgba(10,14,24,.55);
-      border: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-radius: 18px;
-      padding: 14px 14px 12px;
-      box-shadow: 0 18px 60px rgba(0,0,0,.45);
-      user-select:none;
-      z-index: 5;
-    }
-    .ui h1{
-      margin:0 0 10px;
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing:.2px;
-      opacity:.92;
-    }
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px 12px;
-      align-items:end;
-    }
-    .field label{
-      display:block;
-      font-size:12px;
-      opacity:.85;
-      margin:0 0 6px;
-    }
-    .field input[type="range"],
-    .field select,
-    .field input[type="file"]{
-      width:100%;
-    }
-    .field select{
-      height:36px;
-      border-radius: 10px;
-      border:1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.08);
-      color:#fff;
-      padding: 0 10px;
-      outline:none;
-    }
-    .field input[type="range"]{
-      accent-color: #9bd3ff;
-    }
-    .row{
-      display:flex; gap:10px; align-items:center;
-    }
-    .btn{
-      height:36px;
-      border-radius: 10px;
-      border:1px solid rgba(255,255,255,.16);
-      background: rgba(255,255,255,.08);
-      color:#fff;
-      padding: 0 12px;
-      cursor:pointer;
-    }
-    .btn:active{ transform: translateY(1px); }
-    .hint{
-      margin-top:10px;
-      font-size:12px;
-      opacity:.78;
-      line-height:1.35;
-    }
-    .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      opacity:.9;
-    }
-
-    /* Liquid Glass элемент */
-    .glass{
-      position:fixed;
-      left: 50%;
-      top: 55%;
-      transform: translate(-50%, -50%);
-      width: var(--glass-w);
-      height: var(--glass-h);
-
-      border-radius: var(--radius);
-      z-index: 3;
-
-      /* чтобы тач/мышь не скроллили */
-      touch-action:none;
-      cursor: grab;
-    }
-    .glass:active{ cursor: grabbing; }
-
-    /* Слой преломления/размытия (мы рендерим то же фон-изображение, но внутри панели и с фильтром) */
-    .glass::before{
-      content:"";
-      position:absolute;
-      inset:0;
-
-      /* ВАЖНО: background-attachment: fixed -> совпадает с фоном страницы */
-      background-image: var(--bg-url);
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-
-      /* Если картинки нет — берём градиент фона через полупрозрачный слой */
-      background-color: rgba(255,255,255,.02);
-
-      /* “Жидкость”: SVG-displacement + blur, плюс лёгкая насыщенность */
-      filter: url(#lg-displace) blur(var(--blur)) saturate(1.15) contrast(1.05);
-      opacity: .95;
-
-      border-radius: inherit;
-      clip-path: var(--clip, none);
-    }
-
-    /* Стеклянная “плёнка” */
-    .glass::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      border-radius: inherit;
-      clip-path: var(--clip, none);
-
-      background: rgba(255,255,255, var(--opacity));
-      box-shadow:
-        0 18px 60px rgba(0,0,0,.45),
-        inset 0 1px 0 rgba(255,255,255, calc(var(--highlight) * .55)),
-        inset 0 -1px 0 rgba(0,0,0,.22);
-
-      border: 1px solid rgba(255,255,255, var(--border));
-    }
-
-    /* Блики */
-    .shine{
-      position:absolute;
-      inset:0;
-      border-radius: inherit;
-      clip-path: var(--clip, none);
-      pointer-events:none;
-      z-index: 1;
-    }
-    .shine::before{
-      content:"";
-      position:absolute;
-      left:-20%;
-      top:-30%;
-      width: 70%;
-      height: 70%;
-      background: radial-gradient(circle at 30% 30%,
-        rgba(255,255,255, calc(var(--highlight) * .65)),
-        rgba(255,255,255, 0) 65%);
-      transform: rotate(-10deg);
-      filter: blur(2px);
-    }
-    .shine::after{
-      content:"";
-      position:absolute;
-      right:-25%;
-      bottom:-25%;
-      width: 80%;
-      height: 80%;
-      background: radial-gradient(circle at 70% 70%,
-        rgba(255,255,255, calc(var(--highlight) * .25)),
-        rgba(255,255,255, 0) 60%);
-      filter: blur(3px);
-    }
-
-    /* Формы */
-    .shape-rounded{ --clip: none; --radius: 28px; }
-    .shape-circle { --clip: none; --radius: 999px; }
-    .shape-pill   { --clip: none; --radius: 999px; }
-    /* blob через clip-path:path() (в современных Chromium ок) */
-    .shape-blob{
-      --radius: 34px;
-      --clip: path("M 64 20 C 92 2 132 2 164 22 C 192 40 212 72 220 104 C 228 136 224 172 200 196 C 176 220 140 224 108 214 C 76 204 46 184 30 156 C 14 128 36 46 64 20 Z");
-    }
-
-    /* Подпись внутри стекляшки */
-    .glassLabel{
-      position:absolute;
-      left:14px; right:14px; bottom:12px;
-      z-index: 2;
-      font-size: 12px;
-      opacity: .85;
-      text-shadow: 0 2px 14px rgba(0,0,0,.65);
-      user-select:none;
-      pointer-events:none;
-    }
-
-    /* Мелкая адаптация */
-    @media (max-width: 520px){
-      .ui{ top:12px; left:12px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquid Glass Playground</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(to bottom right, #ff9a9e, #fad0c4, #fad0c4, #a18cd1, #fbc2eb);
+            font-family: sans-serif;
+            overflow: hidden;
+            color: #333;
+        }
+        .content {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1;
+            max-width: 600px;
+        }
+        .content h1 {
+            font-size: 2.5em;
+        }
+        .content p {
+            font-size: 1.2em;
+        }
+        .glass {
+            position: absolute;
+            width: 300px;
+            height: 200px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            cursor: move;
+            z-index: 10;
+            backdrop-filter: url(#liquid-glass-filter) blur(5px);
+        }
+        #glass1 {
+            top: 100px;
+            left: 100px;
+        }
+        #glass2 {
+            top: 200px;
+            left: 400px;
+            width: 250px;
+            height: 250px;
+        }
+        svg {
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
+    </style>
 </head>
-
 <body>
-  <div class="stage" id="stage"></div>
-
-  <!-- SVG фильтр: turbulence + displacement -->
-  <svg width="0" height="0" style="position:absolute">
-    <filter id="lg-displace" x="-30%" y="-30%" width="160%" height="160%">
-      <feTurbulence
-        id="turb"
-        type="fractalNoise"
-        baseFrequency="0.012"
-        numOctaves="2"
-        seed="8"
-        result="noise" />
-      <feDisplacementMap
-        in="SourceGraphic"
-        in2="noise"
-        scale="18"
-        xChannelSelector="R"
-        yChannelSelector="G" />
-    </filter>
-  </svg>
-
-  <div class="ui" id="ui">
-    <h1>Liquid Glass Playground</h1>
-
-    <div class="grid">
-      <div class="field" style="grid-column:1 / -1">
-        <label>Фон (загрузи свою картинку)</label>
-        <input type="file" id="bgFile" accept="image/*" />
-      </div>
-
-      <div class="field">
-        <label>Форма</label>
-        <select id="shape">
-          <option value="rounded">Rounded</option>
-          <option value="circle">Circle</option>
-          <option value="pill">Pill</option>
-          <option value="blob">Blob</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Размер</label>
-        <select id="sizePreset">
-          <option value="320x220">320×220</option>
-          <option value="380x260">380×260</option>
-          <option value="460x300">460×300</option>
-          <option value="540x340">540×340</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Blur: <span class="mono" id="blurVal">18</span> px</label>
-        <input type="range" id="blur" min="0" max="40" value="18" />
-      </div>
-
-      <div class="field">
-        <label>Преломление: <span class="mono" id="warpVal">18</span></label>
-        <input type="range" id="warp" min="0" max="60" value="18" />
-      </div>
-
-      <div class="field">
-        <label>Масштаб волн: <span class="mono" id="scaleVal">55</span></label>
-        <input type="range" id="warpScale" min="20" max="140" value="55" />
-      </div>
-
-      <div class="field">
-        <label>Скорость: <span class="mono" id="speedVal">0.9</span></label>
-        <input type="range" id="warpSpeed" min="0" max="2" step="0.05" value="0.9" />
-      </div>
-
-      <div class="field">
-        <label>Прозрачность: <span class="mono" id="opVal">0.14</span></label>
-        <input type="range" id="opacity" min="0.02" max="0.35" step="0.01" value="0.14" />
-      </div>
-
-      <div class="field">
-        <label>Граница: <span class="mono" id="borderVal">0.22</span></label>
-        <input type="range" id="border" min="0" max="0.6" step="0.01" value="0.22" />
-      </div>
-
-      <div class="field">
-        <label>Блики: <span class="mono" id="hiVal">0.55</span></label>
-        <input type="range" id="highlight" min="0" max="1" step="0.01" value="0.55" />
-      </div>
-
-      <div class="field" style="grid-column:1 / -1">
-        <div class="row">
-          <button class="btn" id="centerBtn">По центру</button>
-          <button class="btn" id="resetBtn">Сброс</button>
-        </div>
-      </div>
+    <div class="content">
+        <h1>Welcome to Liquid Glass Playground</h1>
+        <p>Drag the glass elements around to see the refraction and blur effects inspired by iOS 26's Liquid Glass design.</p>
+        <p>The elements use SVG filters for displacement-based refraction, simulating light bending through curved glass.</p>
     </div>
 
-    <div class="hint">
-      Перетаскивай “стекло” по экрану. Если фона нет, загрузи картинку — так преломление видно сильнее.
-    </div>
-  </div>
+    <svg>
+        <defs>
+            <filter id="liquid-glass-filter">
+                <feImage href="https://essykings.github.io/JavaScript/map.png" x="-50%" y="-50%" width="200%" height="200%" result="map" />
+                <feDisplacementMap in="SourceGraphic" in2="map" scale="20" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+                <feGaussianBlur in="displaced" stdDeviation="2" result="blurred" />
+                <feComposite in="blurred" operator="in" in2="SourceGraphic" />
+            </filter>
+        </defs>
+    </svg>
 
-  <div class="glass shape-rounded" id="glass">
-    <div class="shine"></div>
-    <div class="glassLabel">Перетащи меня — смотри преломление</div>
-  </div>
+    <div class="glass" id="glass1"></div>
+    <div class="glass" id="glass2"></div>
 
-  <script>
-    const root = document.documentElement;
+    <script>
+        const glasses = document.querySelectorAll('.glass');
+        glasses.forEach(glass => {
+            let isDragging = false;
+            let offsetX, offsetY;
 
-    const stage = document.getElementById('stage');
-    const glass = document.getElementById('glass');
+            glass.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.clientX - glass.getBoundingClientRect().left;
+                offsetY = e.clientY - glass.getBoundingClientRect().top;
+                glass.style.transition = 'none';
+            });
 
-    const bgFile = document.getElementById('bgFile');
-    const shape = document.getElementById('shape');
-    const sizePreset = document.getElementById('sizePreset');
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    glass.style.left = `${e.clientX - offsetX}px`;
+                    glass.style.top = `${e.clientY - offsetY}px`;
+                }
+            });
 
-    const blur = document.getElementById('blur');
-    const warp = document.getElementById('warp');
-    const warpScale = document.getElementById('warpScale');
-    const warpSpeed = document.getElementById('warpSpeed');
-
-    const opacity = document.getElementById('opacity');
-    const border = document.getElementById('border');
-    const highlight = document.getElementById('highlight');
-
-    const blurVal = document.getElementById('blurVal');
-    const warpVal = document.getElementById('warpVal');
-    const scaleVal = document.getElementById('scaleVal');
-    const speedVal = document.getElementById('speedVal');
-    const opVal = document.getElementById('opVal');
-    const borderVal = document.getElementById('borderVal');
-    const hiVal = document.getElementById('hiVal');
-
-    const turb = document.getElementById('turb');
-    const filter = document.querySelector('#lg-displace feDisplacementMap');
-
-    const centerBtn = document.getElementById('centerBtn');
-    const resetBtn = document.getElementById('resetBtn');
-
-    // ---------- helpers ----------
-    function setVar(name, value){
-      root.style.setProperty(name, value);
-    }
-
-    function applyUI(){
-      setVar('--blur', `${blur.value}px`);
-      setVar('--opacity', opacity.value);
-      setVar('--border', border.value);
-      setVar('--highlight', highlight.value);
-
-      // displacement scale
-      filter.setAttribute('scale', warp.value);
-
-      blurVal.textContent = blur.value;
-      warpVal.textContent = warp.value;
-      scaleVal.textContent = warpScale.value;
-      speedVal.textContent = warpSpeed.value;
-      opVal.textContent = Number(opacity.value).toFixed(2);
-      borderVal.textContent = Number(border.value).toFixed(2);
-      hiVal.textContent = Number(highlight.value).toFixed(2);
-    }
-
-    function applyShape(){
-      glass.classList.remove('shape-rounded','shape-circle','shape-pill','shape-blob');
-      glass.classList.add(`shape-${shape.value}`);
-
-      // pill: делаем его вытянутым по ширине
-      if(shape.value === 'pill'){
-        setVar('--glass-w', '520px');
-        setVar('--glass-h', '180px');
-      } else {
-        // вернём к пресету
-        const [w,h] = sizePreset.value.split('x').map(Number);
-        setVar('--glass-w', `${w}px`);
-        setVar('--glass-h', `${h}px`);
-      }
-    }
-
-    function applySize(){
-      const [w,h] = sizePreset.value.split('x').map(Number);
-      setVar('--glass-w', `${w}px`);
-      setVar('--glass-h', `${h}px`);
-    }
-
-    // ---------- background upload ----------
-    let currentObjectUrl = null;
-    bgFile.addEventListener('change', () => {
-      const file = bgFile.files?.[0];
-      if(!file) return;
-
-      if(currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
-      currentObjectUrl = URL.createObjectURL(file);
-
-      setVar('--bg-url', `url("${currentObjectUrl}")`);
-      stage.classList.add('hasImage');
-    });
-
-    // ---------- UI events ----------
-    [blur, warp, warpScale, warpSpeed, opacity, border, highlight].forEach(el => {
-      el.addEventListener('input', applyUI);
-    });
-
-    shape.addEventListener('change', applyShape);
-    sizePreset.addEventListener('change', () => {
-      applySize();
-      // если pill выбран — он сам задаёт размер
-      if(shape.value !== 'pill') applyShape();
-    });
-
-    centerBtn.addEventListener('click', () => {
-      glass.style.left = '50%';
-      glass.style.top = '55%';
-      glass.style.transform = 'translate(-50%, -50%)';
-    });
-
-    resetBtn.addEventListener('click', () => {
-      blur.value = 18;
-      warp.value = 18;
-      warpScale.value = 55;
-      warpSpeed.value = 0.9;
-      opacity.value = 0.14;
-      border.value = 0.22;
-      highlight.value = 0.55;
-
-      shape.value = 'rounded';
-      sizePreset.value = '320x220';
-      applySize();
-      applyShape();
-      applyUI();
-
-      // фон не трогаем (чтобы случайно не потерять)
-    });
-
-    // ---------- animated turbulence (liquid motion) ----------
-    let t = 0;
-    function tick(){
-      // baseFrequency зависит от масштаба волн
-      const base = 1 / Number(warpScale.value);
-      // добавим лёгкое дыхание
-      const speed = Number(warpSpeed.value);
-      t += 0.016 * speed;
-
-      // feTurbulence baseFrequency можно задавать двумя значениями
-      const fx = (base * (1.0 + Math.sin(t) * 0.08)).toFixed(5);
-      const fy = (base * (1.0 + Math.cos(t * 0.9) * 0.08)).toFixed(5);
-      turb.setAttribute('baseFrequency', `${fx} ${fy}`);
-
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-
-    // ---------- drag ----------
-    let dragging = false;
-    let offsetX = 0, offsetY = 0;
-
-    function px(n){ return `${n}px`; }
-
-    function startDrag(e){
-      dragging = true;
-      glass.setPointerCapture(e.pointerId);
-
-      const rect = glass.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-
-      // отключаем translate(-50%,-50%) чтобы двигать пикселями
-      glass.style.transform = 'none';
-    }
-
-    function moveDrag(e){
-      if(!dragging) return;
-
-      const w = glass.offsetWidth;
-      const h = glass.offsetHeight;
-
-      let x = e.clientX - offsetX;
-      let y = e.clientY - offsetY;
-
-      // ограничение по экрану
-      x = Math.max(8, Math.min(window.innerWidth - w - 8, x));
-      y = Math.max(8, Math.min(window.innerHeight - h - 8, y));
-
-      glass.style.left = px(x);
-      glass.style.top = px(y);
-    }
-
-    function endDrag(e){
-      dragging = false;
-      try { glass.releasePointerCapture(e.pointerId); } catch {}
-    }
-
-    glass.addEventListener('pointerdown', startDrag);
-    glass.addEventListener('pointermove', moveDrag);
-    glass.addEventListener('pointerup', endDrag);
-    glass.addEventListener('pointercancel', endDrag);
-
-    // ---------- init ----------
-    applySize();
-    applyShape();
-    applyUI();
-  </script>
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                glass.style.transition = 'all 0.3s ease';
+            });
+        });
+    </script>
 </body>
 </html>
