@@ -8,50 +8,86 @@
         body {
             margin: 0;
             height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(to bottom right, #ff9a9e, #fad0c4, #fad0c4, #a18cd1, #fbc2eb);
+            background: #f0f8ff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M0 0h20v1H0zM0 0v20h1V0z" fill="%23ddd"/></svg>') repeat;
             font-family: sans-serif;
-            overflow: hidden;
             color: #333;
+            position: relative;
+            overflow: hidden;
         }
-        .content {
+        .container {
+            position: relative;
+            height: 100%;
+        }
+        .parameters {
             position: absolute;
-            top: 20px;
+            bottom: 20px;
             left: 20px;
             z-index: 1;
-            max-width: 600px;
+            background: rgba(255,255,255,0.8);
+            padding: 20px;
+            border-radius: 20px;
+            width: 300px;
         }
-        .content h1 {
-            font-size: 2.5em;
-        }
-        .content p {
-            font-size: 1.2em;
+        .parameter {
+            margin-bottom: 10px;
         }
         .glass {
             position: absolute;
-            width: 300px;
-            height: 200px;
-            border-radius: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border-radius: 50px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 30px rgba(0,0,0,0.1);
             cursor: move;
-            z-index: 10;
-            backdrop-filter: url(#liquid-glass-filter) blur(5px);
+            backdrop-filter: url(#liquid-glass-filter) blur(0.2px);
         }
-        #glass1 {
+        #lens {
+            width: 300px;
+            height: 300px;
             top: 100px;
             left: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            padding: 20px;
+            text-align: center;
         }
-        #glass2 {
+        #toggle {
+            width: 200px;
+            height: 60px;
+            top: 400px;
+            left: 100px;
+            display: flex;
+            align-items: center;
+            padding: 5px;
+        }
+        .knob {
+            width: 50%;
+            height: 100%;
+            border-radius: 50px;
+            background: linear-gradient(to bottom, #0f0, #0c0);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        #search {
+            width: 300px;
+            height: 50px;
             top: 200px;
-            left: 400px;
-            width: 250px;
-            height: 250px;
+            left: 500px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            background-image: url('https://images.unsplash.com/photo-1497250681960-ef046c08a56e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80');
+            background-size: cover;
         }
-        svg {
+        #search input {
+            background: transparent;
+            border: none;
+            color: #333;
+            font-size: 1em;
+            width: 100%;
+        }
+        svg.defs {
             position: absolute;
             width: 0;
             height: 0;
@@ -59,25 +95,45 @@
     </style>
 </head>
 <body>
-    <div class="content">
-        <h1>Welcome to Liquid Glass Playground</h1>
-        <p>Drag the glass elements around to see the refraction and blur effects inspired by iOS 26's Liquid Glass design.</p>
-        <p>The elements use SVG filters for displacement-based refraction, simulating light bending through curved glass.</p>
+    <div class="container">
+        <h1 style="position: absolute; top: 20px; left: 20px;">Liquid Glass Playground</h1>
+        <div class="glass" id="lens">Drag the capsule to bend the page. This lens is a compact SVG displacement rig that refracts whatever sits beneath it.</div>
+        <div class="glass" id="toggle">
+            <div class="knob"></div>
+        </div>
+        <div class="glass" id="search">
+            <input type="text" placeholder="Search">
+        </div>
+        <div class="parameters">
+            <div class="parameter">
+                <label>Specular Opacity: <span id="spec-op">0.50</span></label>
+                <input type="range" min="0" max="1" step="0.01" value="0.5" id="specular-opacity">
+            </div>
+            <div class="parameter">
+                <label>Specular Saturation: <span id="spec-sat">6</span></label>
+                <input type="range" min="0" max="10" step="1" value="6" id="specular-saturation">
+            </div>
+            <div class="parameter">
+                <label>Refraction Level: <span id="ref-level">1.00</span></label>
+                <input type="range" min="0" max="2" step="0.01" value="1" id="refraction-level">
+            </div>
+            <div class="parameter">
+                <label>Blur Level: <span id="blur-level">0.2</span></label>
+                <input type="range" min="0" max="1" step="0.01" value="0.2" id="blur-level">
+            </div>
+        </div>
     </div>
 
-    <svg>
+    <svg class="defs">
         <defs>
             <filter id="liquid-glass-filter">
-                <feImage href="https://essykings.github.io/JavaScript/map.png" x="-50%" y="-50%" width="200%" height="200%" result="map" />
-                <feDisplacementMap in="SourceGraphic" in2="map" scale="20" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-                <feGaussianBlur in="displaced" stdDeviation="2" result="blurred" />
-                <feComposite in="blurred" operator="in" in2="SourceGraphic" />
+                <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="1" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+                <feGaussianBlur in="disp" stdDeviation="0.2" result="blur"/>
+                <feColorMatrix in="blur" type="saturate" values="1" />
             </filter>
         </defs>
     </svg>
-
-    <div class="glass" id="glass1"></div>
-    <div class="glass" id="glass2"></div>
 
     <script>
         const glasses = document.querySelectorAll('.glass');
@@ -89,7 +145,6 @@
                 isDragging = true;
                 offsetX = e.clientX - glass.getBoundingClientRect().left;
                 offsetY = e.clientY - glass.getBoundingClientRect().top;
-                glass.style.transition = 'none';
             });
 
             document.addEventListener('mousemove', (e) => {
@@ -101,8 +156,42 @@
 
             document.addEventListener('mouseup', () => {
                 isDragging = false;
-                glass.style.transition = 'all 0.3s ease';
             });
+        });
+
+        // Update parameters
+        const filter = document.getElementById('liquid-glass-filter');
+        const dispMap = filter.querySelector('feDisplacementMap');
+        const gaussian = filter.querySelector('feGaussianBlur');
+        const colorMatrix = filter.querySelector('feColorMatrix');
+        const specOp = document.getElementById('specular-opacity');
+        const specSat = document.getElementById('specular-saturation');
+        const refLevel = document.getElementById('refraction-level');
+        const blurLevel = document.getElementById('blur-level');
+        const specOpLabel = document.getElementById('spec-op');
+        const specSatLabel = document.getElementById('spec-sat');
+        const refLevelLabel = document.getElementById('ref-level');
+        const blurLevelLabel = document.getElementById('blur-level');
+
+        specOp.addEventListener('input', (e) => {
+            specOpLabel.textContent = e.target.value;
+            // For specular opacity, perhaps adjust opacity of a layer, but skipped for simplicity
+        });
+
+        specSat.addEventListener('input', (e) => {
+            specSatLabel.textContent = e.target.value;
+            // For saturation, adjust feColorMatrix
+            colorMatrix.setAttribute('values', e.target.value);
+        });
+
+        refLevel.addEventListener('input', (e) => {
+            refLevelLabel.textContent = e.target.value;
+            dispMap.setAttribute('scale', 20 * e.target.value);
+        });
+
+        blurLevel.addEventListener('input', (e) => {
+            blurLevelLabel.textContent = e.target.value;
+            gaussian.setAttribute('stdDeviation', e.target.value);
         });
     </script>
 </body>
