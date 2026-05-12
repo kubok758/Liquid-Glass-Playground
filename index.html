@@ -1,235 +1,41 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Liquid Glass Playground — Свой фон + Перетаскивание</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-    :root {
-      --blur: 28px;
-      --opacity: 0.11;
-      --sat: 210%;
-      --glow: 30px;
-    }
-
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: linear-gradient(135deg, #0f0a1f, #1a0033, #000) no-repeat center center fixed;
-      background-size: cover;
-      min-height: 100vh;
-      color: white;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .background-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    .liquid-glass {
-      background: rgba(255, 255, 255, var(--opacity));
-      backdrop-filter: blur(var(--blur)) saturate(var(--sat));
-      -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      box-shadow: 
-        0 30px 60px -15px rgb(0 0 0 / 0.6),
-        inset 0 3px 15px rgba(255,255,255,0.4),
-        inset 0 -3px 10px rgba(0,0,0,0.5),
-        0 0 var(--glow) rgba(168, 85, 247, 0.45);
-      border-radius: 32px;
-      position: absolute;
-      overflow: hidden;
-      cursor: grab;
-      user-select: none;
-      transition: box-shadow 0.3s;
-    }
-
-    .liquid-glass:active {
-      cursor: grabbing;
-      box-shadow: 0 40px 80px -10px rgb(0 0 0 / 0.7);
-    }
-
-    .liquid-glass::before {
-      content: '';
-      position: absolute;
-      inset: -200%;
-      background: radial-gradient(
-        circle at var(--mx, 50%) var(--my, 50%),
-        rgba(255,255,255,0.55) 8%,
-        rgba(255,255,255,0.18) 35%,
-        transparent 75%
-      );
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .liquid-glass svg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0.3;
-      pointer-events: none;
-      z-index: 0;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Liquid Glass</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="flex items-center justify-center p-6">
+<body>
 
-  <!-- Загрузка фона -->
-  <div class="fixed top-6 left-6 z-50 flex flex-col gap-3">
-    <label class="px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl cursor-pointer transition text-sm font-medium flex items-center gap-2">
-      📸 Загрузить свой фон
-      <input type="file" id="bg-upload" accept="image/*" class="hidden">
-    </label>
-    <button onclick="resetBackground()" class="px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl text-sm font-medium">
-      Сбросить фон
-    </button>
+  <div class="background"></div>
+
+  <div class="glass-card">
+    <h1>Liquid Glass</h1>
+    <p>Настоящий glass эффект с distortion</p>
+    <button>Кнопка</button>
   </div>
 
-  <!-- Controls -->
-  <div class="fixed top-6 right-6 z-50 bg-black/70 backdrop-blur-xl rounded-3xl p-6 border border-white/10 w-72">
-    <h3 class="font-semibold mb-4">Настройки Liquid Glass</h3>
-    <div class="space-y-5 text-sm">
-      <div>
-        <label class="block mb-1">Blur</label>
-        <input type="range" id="blur" min="10" max="50" value="28" class="w-full accent-purple-500">
-      </div>
-      <div>
-        <label class="block mb-1">Opacity</label>
-        <input type="range" id="opacity" min="0.05" max="0.3" step="0.01" value="0.11" class="w-full accent-purple-500">
-      </div>
-      <div>
-        <label class="block mb-1">Saturation</label>
-        <input type="range" id="sat" min="120" max="300" value="210" class="w-full accent-purple-500">
-      </div>
-      <div>
-        <label class="block mb-1">Glow</label>
-        <input type="range" id="glow" min="10" max="60" value="30" class="w-full accent-purple-500">
-      </div>
-    </div>
-    <button onclick="randomize()" class="mt-6 w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-2xl font-medium">
-      🎲 Случайный стиль
-    </button>
-  </div>
+  <!-- SVG фильтр -->
+  <svg style="display:none">
+    <filter id="liquid">
+      <feTurbulence
+        type="fractalNoise"
+        baseFrequency="0.01 0.01"
+        numOctaves="2"
+        seed="92"
+        result="noise"
+      />
 
-  <!-- Draggable Liquid Glass -->
-  <div class="liquid-glass p-10 w-96 h-96 flex flex-col shadow-2xl" id="draggable-glass" style="left: 30%; top: 25%;">
-    <svg width="100%" height="100%" class="absolute inset-0">
-      <filter id="liquid">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
-        <feDisplacementMap in="SourceGraphic" scale="18"/>
-      </filter>
-    </svg>
-    
-    <div class="text-8xl mb-6 z-10">🌊</div>
-    <h2 class="text-4xl font-bold mb-2 z-10">Liquid Glass</h2>
-    <p class="text-gray-200 z-10">Перетаскивай меня по экрану.<br>Двигай мышкой внутри — смотри на блики.</p>
-    
-    <div class="mt-auto text-xs tracking-widest opacity-60 z-10">DRAG ME • CUSTOM BG</div>
-  </div>
+      <feDisplacementMap
+        in="SourceGraphic"
+        in2="noise"
+        scale="35"
+        xChannelSelector="R"
+        yChannelSelector="G"
+      />
+    </filter>
+  </svg>
 
-  <script>
-    // === Background Upload ===
-    document.getElementById('bg-upload').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          document.body.style.backgroundImage = `url('${ev.target.result}')`;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    function resetBackground() {
-      document.body.style.backgroundImage = '';
-      document.body.style.background = 'linear-gradient(135deg, #0f0a1f, #1a0033, #000)';
-    }
-
-    // === Draggable Logic ===
-    const glass = document.getElementById('draggable-glass');
-    let isDragging = false;
-    let currentX, currentY, initialX, initialY;
-
-    glass.addEventListener('mousedown', startDrag);
-    glass.addEventListener('touchstart', startDrag);
-
-    function startDrag(e) {
-      isDragging = true;
-      const rect = glass.getBoundingClientRect();
-      
-      initialX = (e.type === 'mousedown' ? e.clientX : e.touches[0].clientX) - rect.left;
-      initialY = (e.type === 'mousedown' ? e.clientY : e.touches[0].clientY) - rect.top;
-      
-      currentX = rect.left;
-      currentY = rect.top;
-    }
-
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('touchmove', drag);
-    document.addEventListener('mouseup', stopDrag);
-    document.addEventListener('touchend', stopDrag);
-
-    function drag(e) {
-      if (!isDragging) return;
-      
-      e.preventDefault();
-      
-      const x = (e.type === 'mousemove' ? e.clientX : e.touches[0].clientX) - initialX;
-      const y = (e.type === 'mousemove' ? e.clientY : e.touches[0].clientY) - initialY;
-      
-      glass.style.left = `${x}px`;
-      glass.style.top = `${y}px`;
-    }
-
-    function stopDrag() {
-      isDragging = false;
-    }
-
-    // === Mouse Light Effect ===
-    glass.addEventListener('mousemove', e => {
-      const rect = glass.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      glass.style.setProperty('--mx', `${x}%`);
-      glass.style.setProperty('--my', `${y}%`);
-    });
-
-    // === Controls ===
-    function updateStyles() {
-      const blur = document.getElementById('blur').value;
-      const opacity = document.getElementById('opacity').value;
-      const sat = document.getElementById('sat').value;
-      const glow = document.getElementById('glow').value;
-
-      document.documentElement.style.setProperty('--blur', blur + 'px');
-      document.documentElement.style.setProperty('--opacity', opacity);
-      document.documentElement.style.setProperty('--sat', sat + '%');
-      document.documentElement.style.setProperty('--glow', glow + 'px');
-    }
-
-    document.querySelectorAll('input[type="range"]').forEach(input => {
-      input.addEventListener('input', updateStyles);
-    });
-
-    function randomize() {
-      document.getElementById('blur').value = 18 + Math.random() * 25;
-      document.getElementById('opacity').value = 0.07 + Math.random() * 0.15;
-      document.getElementById('sat').value = 150 + Math.random() * 130;
-      document.getElementById('glow').value = 15 + Math.random() * 35;
-      updateStyles();
-    }
-
-    // Init
-    updateStyles();
-  </script>
 </body>
 </html>
