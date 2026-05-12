@@ -1,41 +1,212 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Liquid Glass</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Liquid Glass Chrome</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  height:100vh;
+  overflow:hidden;
+  font-family:Arial,sans-serif;
+  background:#0f172a;
+}
+
+/* Фон */
+.bg{
+  position:fixed;
+  inset:0;
+
+  background:
+    radial-gradient(circle at 20% 20%, #00d4ff, transparent 30%),
+    radial-gradient(circle at 80% 80%, #ff00d4, transparent 30%),
+    linear-gradient(135deg, #111827, #1e293b);
+
+  animation:bgMove 8s infinite alternate ease-in-out;
+}
+
+@keyframes bgMove{
+  from{
+    transform:scale(1) rotate(0deg);
+  }
+
+  to{
+    transform:scale(1.15) rotate(4deg);
+  }
+}
+
+/* Liquid Glass */
+.glass{
+  position:absolute;
+
+  top:50%;
+  left:50%;
+
+  transform:translate(-50%,-50%);
+
+  width:340px;
+  padding:32px;
+
+  border-radius:30px;
+
+  background:rgba(255,255,255,0.08);
+
+  border:1px solid rgba(255,255,255,0.18);
+
+  backdrop-filter:blur(25px) saturate(180%);
+  -webkit-backdrop-filter:blur(25px) saturate(180%);
+
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.35),
+    inset 0 1px 1px rgba(255,255,255,0.25);
+
+  overflow:hidden;
+}
+
+/* Блик */
+.glass::before{
+  content:"";
+
+  position:absolute;
+  inset:0;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,0.35),
+      rgba(255,255,255,0.02)
+    );
+
+  pointer-events:none;
+}
+
+/* Световой шар */
+.glass::after{
+  content:"";
+
+  position:absolute;
+
+  width:200px;
+  height:200px;
+
+  background:radial-gradient(
+    circle,
+    rgba(255,255,255,0.25),
+    transparent 70%
+  );
+
+  top:-100px;
+  right:-100px;
+
+  filter:blur(10px);
+
+  animation:floatLight 6s infinite alternate ease-in-out;
+}
+
+@keyframes floatLight{
+  from{
+    transform:translateY(0px);
+  }
+
+  to{
+    transform:translateY(25px);
+  }
+}
+
+/* Контент */
+.content{
+  position:relative;
+  z-index:2;
+}
+
+h1{
+  color:white;
+  font-size:42px;
+  margin-bottom:12px;
+}
+
+p{
+  color:rgba(255,255,255,0.8);
+  line-height:1.5;
+  margin-bottom:25px;
+}
+
+/* Кнопка */
+button{
+  padding:14px 22px;
+
+  border:none;
+  border-radius:16px;
+
+  background:rgba(255,255,255,0.12);
+
+  color:white;
+  font-size:16px;
+
+  cursor:pointer;
+
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+
+  border:1px solid rgba(255,255,255,0.15);
+
+  transition:0.3s;
+}
+
+button:hover{
+  transform:translateY(-2px);
+
+  background:rgba(255,255,255,0.18);
+
+  box-shadow:
+    0 6px 18px rgba(255,255,255,0.08);
+}
+
+/* Mobile */
+@media(max-width:480px){
+
+  .glass{
+    width:90%;
+    padding:26px;
+  }
+
+  h1{
+    font-size:34px;
+  }
+
+}
+</style>
 </head>
+
 <body>
 
-  <div class="background"></div>
+<div class="bg"></div>
 
-  <div class="glass-card">
+<div class="glass">
+
+  <div class="content">
+
     <h1>Liquid Glass</h1>
-    <p>Настоящий glass эффект с distortion</p>
-    <button>Кнопка</button>
+
+    <p>
+      Настоящий Liquid Glass эффект для Chrome Android
+    </p>
+
+    <button>
+      Кнопка
+    </button>
+
   </div>
 
-  <!-- SVG фильтр -->
-  <svg style="display:none">
-    <filter id="liquid">
-      <feTurbulence
-        type="fractalNoise"
-        baseFrequency="0.01 0.01"
-        numOctaves="2"
-        seed="92"
-        result="noise"
-      />
-
-      <feDisplacementMap
-        in="SourceGraphic"
-        in2="noise"
-        scale="35"
-        xChannelSelector="R"
-        yChannelSelector="G"
-      />
-    </filter>
-  </svg>
+</div>
 
 </body>
 </html>
