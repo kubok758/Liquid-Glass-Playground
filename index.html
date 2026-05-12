@@ -1,361 +1,235 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Liquid Glass iOS 26 Playground</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600&display=swap');
-        
-        :root {
-            --glass-opacity: 0.085;
-        }
-        
-        body {
-            font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-        
-        .liquid-glass {
-            background: rgba(255, 255, 255, var(--glass-opacity));
-            backdrop-filter: blur(52px) saturate(180%) contrast(105%) brightness(110%);
-            -webkit-backdrop-filter: blur(52px) saturate(180%) contrast(105%) brightness(110%);
-            border: 1.5px solid rgba(255, 255, 255, 0.35);
-            box-shadow: 
-                0 14px 48px -8px rgba(0, 0, 0, 0.48),
-                inset 0 2px 0 rgba(255,255,255,0.75),
-                inset -2px 0 0 rgba(255,255,255,0.45),
-                0 0 0 1px rgba(255,255,255,0.22);
-            border-radius: 38px;
-            position: absolute;
-            width: clamp(260px, 75vw, 420px);
-            height: clamp(260px, 75vw, 420px);
-            cursor: grab;
-            overflow: hidden;
-            user-select: none;
-            transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            filter: url(#liquid-glass-filter);
-        }
-        
-        .liquid-glass:active {
-            cursor: grabbing;
-        }
-        
-        /* Динамический блик — точно как в iOS */
-        .liquid-glass::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at var(--highlight-x, 38%) var(--highlight-y, 38%), 
-                rgba(255,255,255,0.95) 0%, 
-                rgba(255,255,255,0.45) 26%, 
-                transparent 62%);
-            pointer-events: none;
-            z-index: 3;
-            opacity: 0.85;
-            mix-blend-mode: screen;
-            filter: blur(18px);
-            animation: liquid-shimmer 11s linear infinite;
-        }
-        
-        @keyframes liquid-shimmer {
-            0% { transform: rotate(0deg) translate(16px, 16px); }
-            100% { transform: rotate(360deg) translate(16px, 16px); }
-        }
-        
-        .liquid-glass::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 38px;
-            background: linear-gradient(135deg,
-                rgba(255,255,255,0.18) 0%,
-                transparent 50%,
-                rgba(255,255,255,0.11) 75%,
-                transparent 100%);
-            pointer-events: none;
-            z-index: 2;
-            mix-blend-mode: overlay;
-            animation: liquid-flow 16s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-        }
-        
-        @keyframes liquid-flow {
-            0%, 100% { opacity: 0.65; }
-            50% { opacity: 1; }
-        }
-        
-        .bg-container {
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            filter: brightness(0.92) contrast(1.06);
-        }
-        
-        .glass-label {
-            position: absolute;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: clamp(13px, 3vw, 15px);
-            font-weight: 600;
-            letter-spacing: -0.35px;
-            color: rgba(255,255,255,0.96);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.45);
-            z-index: 10;
-            pointer-events: none;
-            white-space: nowrap;
-        }
-        
-        @media (max-width: 640px) {
-            .liquid-glass {
-                border-radius: 32px;
-                box-shadow: 0 10px 32px -6px rgba(0, 0, 0, 0.45);
-            }
-        }
-        
-        .svg-filter {
-            position: absolute;
-            width: 0;
-            height: 0;
-            overflow: hidden;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liquid Glass Playground — Свой фон + Перетаскивание</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --blur: 28px;
+      --opacity: 0.11;
+      --sat: 210%;
+      --glow: 30px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f0a1f, #1a0033, #000) no-repeat center center fixed;
+      background-size: cover;
+      min-height: 100vh;
+      color: white;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .background-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .liquid-glass {
+      background: rgba(255, 255, 255, var(--opacity));
+      backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+      -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--sat));
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 
+        0 30px 60px -15px rgb(0 0 0 / 0.6),
+        inset 0 3px 15px rgba(255,255,255,0.4),
+        inset 0 -3px 10px rgba(0,0,0,0.5),
+        0 0 var(--glow) rgba(168, 85, 247, 0.45);
+      border-radius: 32px;
+      position: absolute;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+      transition: box-shadow 0.3s;
+    }
+
+    .liquid-glass:active {
+      cursor: grabbing;
+      box-shadow: 0 40px 80px -10px rgb(0 0 0 / 0.7);
+    }
+
+    .liquid-glass::before {
+      content: '';
+      position: absolute;
+      inset: -200%;
+      background: radial-gradient(
+        circle at var(--mx, 50%) var(--my, 50%),
+        rgba(255,255,255,0.55) 8%,
+        rgba(255,255,255,0.18) 35%,
+        transparent 75%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .liquid-glass svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.3;
+      pointer-events: none;
+      z-index: 0;
+    }
+  </style>
 </head>
-<body class="bg-black text-white overflow-hidden">
-    <!-- Header -->
-    <div class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-8 py-4 bg-black/75 backdrop-blur-3xl border-b border-white/10">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-gradient-to-br from-cyan-400 to-violet-500 rounded-3xl flex items-center justify-center text-3xl shadow-inner">💧</div>
-            <div>
-                <h1 class="text-2xl md:text-[28px] font-semibold tracking-[-0.8px]">Liquid Glass</h1>
-                <p class="text-xs md:text-sm -mt-1 text-white/70">iOS 26 • Playground</p>
-            </div>
-        </div>
-        
-        <div class="flex items-center gap-3 md:gap-4">
-            <label onclick="document.getElementById('photo-upload').click()" 
-                   class="flex items-center gap-2 px-5 md:px-6 h-10 md:h-11 bg-white/10 hover:bg-white/20 active:bg-white/30 transition-all rounded-3xl cursor-pointer text-sm font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v-4m0 0l4 4m-4-4l4-4m12 0v4m0 0l-4-4m4 4l-4 4" />
-                </svg>
-                <span class="hidden sm:inline">Загрузить фото</span>
-            </label>
-            <input type="file" id="photo-upload" accept="image/*" class="hidden" onchange="handleUpload(event)">
-            
-            <button onclick="resetPosition()" 
-                    class="px-5 md:px-6 h-10 md:h-11 bg-white/10 hover:bg-white/20 active:bg-white/30 transition-all rounded-3xl text-sm font-medium">
-                Сбросить
-            </button>
-            
-            <div onclick="toggleHelp()" class="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-3xl cursor-pointer text-xl">ℹ️</div>
-        </div>
+<body class="flex items-center justify-center p-6">
+
+  <!-- Загрузка фона -->
+  <div class="fixed top-6 left-6 z-50 flex flex-col gap-3">
+    <label class="px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl cursor-pointer transition text-sm font-medium flex items-center gap-2">
+      📸 Загрузить свой фон
+      <input type="file" id="bg-upload" accept="image/*" class="hidden">
+    </label>
+    <button onclick="resetBackground()" class="px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-2xl text-sm font-medium">
+      Сбросить фон
+    </button>
+  </div>
+
+  <!-- Controls -->
+  <div class="fixed top-6 right-6 z-50 bg-black/70 backdrop-blur-xl rounded-3xl p-6 border border-white/10 w-72">
+    <h3 class="font-semibold mb-4">Настройки Liquid Glass</h3>
+    <div class="space-y-5 text-sm">
+      <div>
+        <label class="block mb-1">Blur</label>
+        <input type="range" id="blur" min="10" max="50" value="28" class="w-full accent-purple-500">
+      </div>
+      <div>
+        <label class="block mb-1">Opacity</label>
+        <input type="range" id="opacity" min="0.05" max="0.3" step="0.01" value="0.11" class="w-full accent-purple-500">
+      </div>
+      <div>
+        <label class="block mb-1">Saturation</label>
+        <input type="range" id="sat" min="120" max="300" value="210" class="w-full accent-purple-500">
+      </div>
+      <div>
+        <label class="block mb-1">Glow</label>
+        <input type="range" id="glow" min="10" max="60" value="30" class="w-full accent-purple-500">
+      </div>
     </div>
+    <button onclick="randomize()" class="mt-6 w-full py-3 bg-purple-600 hover:bg-purple-500 rounded-2xl font-medium">
+      🎲 Случайный стиль
+    </button>
+  </div>
 
-    <!-- Фон -->
-    <div id="background" class="bg-container fixed inset-0 z-0"></div>
-
-    <!-- Liquid Glass -->
-    <div id="glass-container" class="liquid-glass"
-         style="left: 50%; top: 32%; transform: translate(-50%, 0);"
-         onmousedown="startDrag(event)"
-         ontouchstart="startDrag(event)">
-        <div class="glass-label">Liquid Glass</div>
-    </div>
-
-    <!-- Инфо-панель -->
-    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:right-8 md:bottom-8 bg-black/70 backdrop-blur-3xl px-6 py-4 md:px-8 md:py-5 rounded-3xl border border-white/10 flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8 text-xs md:text-sm z-50 shadow-2xl max-w-[92vw]">
-        <div class="flex items-center gap-3">
-            <div class="text-cyan-400 text-2xl">🔎</div>
-            <div>
-                <div class="font-semibold text-white">Настоящее преломление</div>
-                <div class="text-white/70">PNG noise + Displacement (по Habr)</div>
-            </div>
-        </div>
-        <div class="flex items-center gap-3">
-            <div class="text-amber-400 text-2xl">✨</div>
-            <div>
-                <div class="font-semibold text-white">Живые блики</div>
-                <div class="text-white/70">Следуют за пальцем</div>
-            </div>
-        </div>
-        <div class="flex items-center gap-3">
-            <div class="text-violet-400 text-2xl">🌊</div>
-            <div>
-                <div class="font-semibold text-white">Жидкая анимация</div>
-                <div class="text-white/70">Точно как у Apple</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SVG фильтр — настоящий Liquid Glass (по статье Habr) -->
-    <svg class="svg-filter" width="0" height="0" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <filter id="liquid-glass-filter" x="-70%" y="-70%" width="240%" height="240%" color-interpolation-filters="sRGB">
-                <!-- Статичный PNG-шум (как рекомендует Habr) — даёт натуральное преломление, а не "облака" -->
-                <feImage href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAACXBIWXMAAA9hAAAPYQGoP6dpAAAMoElEQVRogZ1a3ZqjyI6MkBJc3XOz7/+g+53pMoq9kJQk2K6Zs0yNGzAG/YRCSgn+/r0PYpCD2IEH+SC/yIdZfj6MD9pu3M02cjMb5KC50cycNBoJ0kiCJKn8BEWCACgCAkAAIAhQAGAAIRccNGIDBjCADdilHdilh/QAH9AX+DA+yN1sM9vAYRw2SIKg1dNJkm61Y0YzGkmDGc1A0og8JEGT1Q1gBCkQJEgArENgCi4QFDR1AABIAEEJggAIECRJogBJeblIkLK0AUEOjpQUBMzMyPk/naTRUvTUgTQDjWZESmxgfgJGIA8poE62+HNHvSeJedzngdYgZZaASNepr1HelgQhYthuhjKrpaBmrP+MZuUHt9IqP9mKWnkEZiAxzc8UkgQFkDzFLAeohZJw7qh3InRAIYYUQAhBCOVStauHbaTBQXMaPWV2L4Sb08ytxPUS1wxmaftohIEX0QkT076Fe1UcZExISB3Uhp3Ctw9CSt0i2jMSKCKmP4nBB70AYsbEudtwcx++DR/DbJi7mafh6WVs2sSPQJql+Zmxm9Y/kVPSsw1OlB/K3gIhEwI4ICqDO47QM8Lj2BShCFHMCEnTaPhXYd5TBXN3H2N/7PtjezzG/nDfzDe6kw66+cRQBsQKfaSLK2RXBU6Y84SSFtwrhCOjNcULAaEIHId/f38f37tCoQAEBCBQ0uCXO+E0N7rb5j58e+y/f339/v3462t7bDaGuTMZkwZ6RgBIEvk50d/Si1DGMi8KqHVicc8ZstEIknBAh3Aojjjw/Obzb/v7z/78ez9CVAhKiAHDv8qYLPSPfX/8+vX719f//Nr/2rd9s+FWdOPNWCk9KzpZzM7Cjdr2J0+CnPSji+yEAATAPqeCO0IRccTzie9tH//7/A+ex98hISoeAhr2SCah08wSPV/7778eX3899t/DNrdJnMVXGapW4hbceSLnZP4VP9P20jw76afUUAMqACkkQYPb+OP8j8WXjnhGxHFECBQEcPCr2JFGp49tG4992x/742GeadcIFNXgBE3zQJ1sE99wX0Q/sbXkrsvRCa+ZCxonh/jc9Y3vZ4yDT4UiEJLIkIZ9mYFmNtLGw20bY9vMh/mocAVViM/Yb7uDInlyJRfEL9C/RO881HJGEFtZQJnBLc8LDBwxxrF7wCNiZmmBw3abGcvo5u6bcTg9MzEh4sXkrUMVBLwY/oV83m7pNgEpO1sNZDSUtWAZL6ag3GKjghIVRabDdzeaZx6AmRs35yCsLTq5pUHPhW1O/LwXnauVr1t7RQuvcuYHAKpUSIYgMzkhyiAwQkWjtruDltUlRuZf+qx/WCiZ9cdCO9OQn23fmp940eUrCMwgpgArNVQRiqo5YJBn8UGJQEAsCPnmDnoXOk7H8CQm2Mru09LzD1cs/ajAaXV79cUstZupqoA6CcsIIZyiEIiqMxJCw410ZJ5y0tyJTrbT0h20L9J/9MNVE85/rrFbUs4I4HpeVXJKAVlWIQxrjpJEDPOytlkyvaOL0AUti7icKt00WSR+5SKhi5eVTtdMrdUH0kJveRElL29nJi4P2Kh1SqcqTvzwLmsF9Sn0xwC4UdDbzHaTm7WqqeDOmpuiQCIaRVVr5dIHQHmgFlqmWqmwFll5La/QZ+P61Q/9mUkNpzxX2c8lzZReaJOvsdCHygVAUAYJwUxzDGDQ5wLRDEZ5umHlnKvtL5iZCe6uxksk36XXTb1Xn+R9VKkzuSgoEmZSZOk0LFcyuSYrD3T4LtIvbHMR9L0H3oTvi+3Lf1otnd92NPfCIRc7hGSy6hXUugwYtQyWmVmulgm78D1XWW5S/iD9HezvtlfpZ3CXDmWlJCMjZAELSvAswIeZTfxkAjtDtrI9X2RdDf9WsZv9Lwb+IDcnVXE9vER/rvVy0Vc5wgzu8FMHeHqA5++4yLJq8rMTbpd90vPyqeVQ19/OsiI/xVozDaMbaLLsmWR3oYJmeeQ1Kv9RxJsf5vaD7W/kc95B/XlKn9eQgHJ9PkU3g6E8cIoyeeaKnFWTH3b+q1D5IXJOL6kWxBRg7GZVU03uGLhQp2636SB58+BXV9xUvetzWyq8/Xk7YWny9WaE5anknyyrVgy+M+fbJ93M/Oknr9sPqHvxku7ONCBbUGwdzr+K/PePfCv6W7F+UO9ywZuc9vLzeU35ROgYmDpk1/WN+f/l9paLflCPL6fOMwu6lLUbs4brOABglKXQldl62f7JBv8k+n+98ePRHauq/kXvIxWoFmGmYauerz5J/BoDc9PLlf8k7Rs/XPsU77cmeBGAUYQKQiV9k8+rT3/cbpe9fbxeD/Xm/PvnMoXXSYwUzJr1iTlamYy7pvJ/3N4uFOff/2Ob04OWWK8eaw6d31GmPqTeWv+tl+/08Gnh+7r/zxZqSjmlLLUEcXRqarqYJe3lQe+f8qKgfoyKtzp8MsFlu4ZdO0UkZZgeOlsCuCpx2X138hXZPwfAv0fUTKtYhWq6zPCtb7he11HwD0Lw5cz1UJ8NfH7qZyeUDDUUnAzTa1blWOUknHzmOVJ70eEDRG5i3aDy0fYXTjnFAq5wB9AzsbZtMiY1ijKN6hblyaB97+Ve1XA6EyT4Y0n8ul2Uud58VeyycyV1nRASLBXJYpt2XQW8mutFgs+k9IlVbzv3Gy6EeOqmU/pe8mbdbBhFpPOurGKjdU87lYG7WwNBOX2vFSBnUEwP4IMTrvpXE1TvKPvs5FNIwukUm01zGDBy7Jfd1e43anJv31arC+uwwr+/Onmre5pamw7vdVjgevfJ+txqRVmPPxMvIsAhx5nS1U3hALITebFKD0bvlsbd8BcS+yj9y7darFAgWNfm2U8x5mqrwD7gU/wUUTUwj1sqTqtnHJ9d2G4itL2n7d6IfhX0JLv3V5Zz2HFnVXUmU3bvhINeaqdzJPEQONvgN0yfcXU+pn/auJrS/FjecbJQBcPCp7XPs0gQTTVZN/asUSQGvSdb1TVtrUO3x7bNl4nQyaq44Gr96RrPd1C9wImn9OdTa34LmuiiJ51EQYhb1qHdwIq2ztoau2eAoiau2p3Mpbvpb85YvMSrDpwj5v66gQQ6MECHeQ6ZSMCoga3SQiKfQQAIQmd1NAclyoyIOdW9RsgFJG9TyXLBawDwclkzppj8YzIXh+DZfcjFlw2NnJaVDnFAgELIt0Im68xIPcXFkk3/fQSvoresN33WZk5lAdDB0X+A2cwDe1JP5i/CJECHEksFHS3PzmUGm4h068JqccZE1HL+1SFr3F/VKD8Q5qmAbAcd3UAXwIGHEMzkq5CegqQnFKpUgJo9vFD/VeiLGlex1mi+A+ZF9NlcQOEaBpg4xB3cZCNbo6kDB/bm5chJpwKBI6QIhcmkGvEscvfsKSPijt77diEprqGPnsqAKFqsHEhgzvgsfMi2sE22ywaybCNAw+DeHkvMuALHoe8Dw2k6OqwZC7+tcQzcC5nGUI3dsfiIa52FHmrPYE2TlAsV2bEaI3w8t8cxHoc/wAFI9Gq0D37RauhBShrS0GHHk9/m8OdQ0MFDsE4UBEw43wZIyS4R/NEPtd+/5Aqk2VojDNnmj0GN7bnvf/Zff7avw7fDh5w01GuSg49eKgQA46E4jm//5gb+ifh+ejBkFhXQJhgQoqWZZqu76sEzF826SZp+KKyzxZ3Qz4ZUNacgJ5wYjM31tT9/7X++Ht/b4+kuOskga4w3+EVEY0OKgAmxP78fwvMYTzuCLrhgwXrzol8ctO71sVj4bMovpYYWQBHz336jlN0ezL6aQ8MwKCc2xu56+PPXFvv2HEOVELrhT8PQXgFTr6+IEXHsxHEwQgc8KEABE0aVLTAxXxJL+J3NvJM/EiWFk7N866ivV0t7oIKckEKDGIQzdtcG7B4P0/AYLmOQSPTnRIPkwKOKgswDqnqUETpCQL2JR5ChrFBTn9RWUivASvqauGoU9QtAlRNmbZPrlLJ9v5QLGTEMngHgcmKYzETO+VdOISlhxKNeAGE6PtOWInkpJ+IUQjLNfKekpXRFLbVbh8XOXX0vyOl1d2eMjKosgZofsnYAROtpmFULEcsMGDASQ3t6WpbLmJyCZySklFAIEcpXOxkpgBigGIBJyPqql4d5p+aXtUaizhfCiX7Pes7UaSJIE7C8nFrXdAPU5uyCAIe2IoyADMwJeOK7DV+LnNyvMjtfyy78GM7XPc/grXeje2mFfqdO6CbURRLAquggOeXukJ2pF0V4pwIjpotzdFw4yUIi+iXIwo9KpWg+73FDgUL9YnSTEdfVLuv1MhE2XyrlJCXjgiLU6AXovAsqybPKAlHA/wH75uVy+EFM3wAAAABJRU5ErkJggg==" result="noiseMap" />
-                
-                <!-- Gaussian blur шума для мягкости -->
-                <feGaussianBlur in="noiseMap" stdDeviation="1.6" result="blurredNoise" />
-                
-                <!-- Настоящее преломление (displacement) -->
-                <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="24" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-                
-                <!-- Финальный blur + лёгкий chromatic aberration -->
-                <feGaussianBlur in="displaced" stdDeviation="1.1" result="final" />
-                <feComponentTransfer in="final" result="chromatic">
-                    <feFuncR type="linear" slope="1.03" intercept="-0.015" />
-                    <feFuncG type="linear" slope="0.98" intercept="0.01" />
-                    <feFuncB type="linear" slope="1.02" intercept="-0.012" />
-                </feComponentTransfer>
-            </filter>
-        </defs>
+  <!-- Draggable Liquid Glass -->
+  <div class="liquid-glass p-10 w-96 h-96 flex flex-col shadow-2xl" id="draggable-glass" style="left: 30%; top: 25%;">
+    <svg width="100%" height="100%" class="absolute inset-0">
+      <filter id="liquid">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="3"/>
+        <feDisplacementMap in="SourceGraphic" scale="18"/>
+      </filter>
     </svg>
+    
+    <div class="text-8xl mb-6 z-10">🌊</div>
+    <h2 class="text-4xl font-bold mb-2 z-10">Liquid Glass</h2>
+    <p class="text-gray-200 z-10">Перетаскивай меня по экрану.<br>Двигай мышкой внутри — смотри на блики.</p>
+    
+    <div class="mt-auto text-xs tracking-widest opacity-60 z-10">DRAG ME • CUSTOM BG</div>
+  </div>
 
-    <!-- Модалка -->
-    <div id="help-modal" onclick="if(event.target.id === 'help-modal') toggleHelp()" 
-         class="hidden fixed inset-0 bg-black/90 backdrop-blur-2xl z-[9999] flex items-center justify-center p-4">
-        <div onclick="event.stopImmediatePropagation()" 
-             class="max-w-lg w-full bg-zinc-900 border border-white/10 rounded-3xl p-8 md:p-10">
-            <h2 class="text-3xl font-semibold mb-6">Liquid Glass iOS 26</h2>
-            <p class="text-white/80 mb-8">Синий квадрат полностью убран. Теперь это настоящий Liquid Glass по всем правилам из статьи на Habr:</p>
-            <ul class="space-y-5 text-sm">
-                <li class="flex gap-4"><span class="text-3xl">📸</span><span><strong>PNG noise map</strong> — натуральное преломление, без «облачного» эффекта turbulence</span></li>
-                <li class="flex gap-4"><span class="text-3xl">🔎</span><span>feDisplacementMap + chromatic aberration</span></li>
-                <li class="flex gap-4"><span class="text-3xl">✨</span><span>Прозрачность и блики настроены точно под iOS 26</span></li>
-                <li class="flex gap-4"><span class="text-3xl">📱</span><span>Отлично работает в Chrome, Edge и Safari</span></li>
-            </ul>
-            <button onclick="toggleHelp()" 
-                    class="mt-10 w-full h-14 bg-white text-black font-semibold rounded-3xl text-lg">Закрыть</button>
-        </div>
-    </div>
-
-    <script>
-        function initializeTailwind() { tailwind.config = { content: [] } }
-
-        let currentBgUrl = 'https://picsum.photos/id/1015/2000/1200';
-        
-        function setBackground(url) {
-            document.getElementById('background').style.backgroundImage = `url('${url}')`;
-        }
-        
-        function handleUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = ev => {
-                currentBgUrl = ev.target.result;
-                setBackground(currentBgUrl);
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        let isDragging = false;
-        let currentX = 0, currentY = 0;
-        let initialX = 0, initialY = 0;
-        let glass = null;
-        
-        function startDrag(e) {
-            glass = document.getElementById('glass-container');
-            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-            
-            initialX = clientX - currentX;
-            initialY = clientY - currentY;
-            isDragging = true;
-            
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('touchmove', drag, { passive: false });
-            document.addEventListener('mouseup', stopDrag);
-            document.addEventListener('touchend', stopDrag);
-        }
-        
-        function drag(e) {
-            if (!isDragging || !glass) return;
-            e.preventDefault();
-            
-            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-            
-            currentX = clientX - initialX;
-            currentY = clientY - initialY;
-            
-            const maxX = window.innerWidth - glass.offsetWidth;
-            const maxY = window.innerHeight - glass.offsetHeight;
-            
-            currentX = Math.max(0, Math.min(currentX, maxX));
-            currentY = Math.max(0, Math.min(currentY, maxY));
-            
-            glass.style.left = `${currentX}px`;
-            glass.style.top = `${currentY}px`;
-            glass.style.transform = 'none';
-            
-            updateHighlight(clientX, clientY);
-        }
-        
-        function stopDrag() {
-            isDragging = false;
-            document.removeEventListener('mousemove', drag);
-            document.removeEventListener('touchmove', drag);
-            document.removeEventListener('mouseup', stopDrag);
-            document.removeEventListener('touchend', stopDrag);
-        }
-        
-        function updateHighlight(clientX, clientY) {
-            if (!glass) return;
-            const rect = glass.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            const offsetX = ((clientX - centerX) / rect.width) * 110;
-            const offsetY = ((clientY - centerY) / rect.height) * 110;
-            
-            glass.style.setProperty('--highlight-x', `${42 + offsetX * 0.5}%`);
-            glass.style.setProperty('--highlight-y', `${38 + offsetY * 0.5}%`);
-        }
-        
-        function resetPosition() {
-            glass = document.getElementById('glass-container');
-            glass.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
-            glass.style.left = '50%';
-            glass.style.top = '32%';
-            glass.style.transform = 'translate(-50%, 0)';
-            currentX = glass.offsetLeft;
-            currentY = glass.offsetTop;
-            setTimeout(() => glass.style.transition = '', 800);
-        }
-        
-        function toggleHelp() {
-            const modal = document.getElementById('help-modal');
-            modal.classList.toggle('hidden');
-            modal.style.display = modal.classList.contains('hidden') ? 'none' : 'flex';
-        }
-        
-        window.onload = () => {
-            initializeTailwind();
-            setBackground(currentBgUrl);
-            
-            glass = document.getElementById('glass-container');
-            currentX = window.innerWidth * 0.5 - glass.offsetWidth / 2;
-            currentY = window.innerHeight * 0.32;
-            
-            document.addEventListener('mousemove', e => updateHighlight(e.clientX, e.clientY));
-            document.addEventListener('touchmove', e => {
-                if (!isDragging) updateHighlight(e.touches[0].clientX, e.touches[0].clientY);
-            });
-            
-            console.log('%c✅ Liquid Glass iOS 26 — теперь с настоящим преломлением (PNG noise + Displacement)', 'color:#00f0ff; font-size:14px; font-weight:700');
+  <script>
+    // === Background Upload ===
+    document.getElementById('bg-upload').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          document.body.style.backgroundImage = `url('${ev.target.result}')`;
         };
-        
-        window.addEventListener('resize', () => {
-            if (glass) {
-                const maxX = window.innerWidth - glass.offsetWidth;
-                const maxY = window.innerHeight - glass.offsetHeight;
-                currentX = Math.min(Math.max(0, currentX), maxX);
-                currentY = Math.min(Math.max(0, currentY), maxY);
-                glass.style.left = `${currentX}px`;
-                glass.style.top = `${currentY}px`;
-            }
-        });
-    </script>
+        reader.readAsDataURL(file);
+      }
+    });
+
+    function resetBackground() {
+      document.body.style.backgroundImage = '';
+      document.body.style.background = 'linear-gradient(135deg, #0f0a1f, #1a0033, #000)';
+    }
+
+    // === Draggable Logic ===
+    const glass = document.getElementById('draggable-glass');
+    let isDragging = false;
+    let currentX, currentY, initialX, initialY;
+
+    glass.addEventListener('mousedown', startDrag);
+    glass.addEventListener('touchstart', startDrag);
+
+    function startDrag(e) {
+      isDragging = true;
+      const rect = glass.getBoundingClientRect();
+      
+      initialX = (e.type === 'mousedown' ? e.clientX : e.touches[0].clientX) - rect.left;
+      initialY = (e.type === 'mousedown' ? e.clientY : e.touches[0].clientY) - rect.top;
+      
+      currentX = rect.left;
+      currentY = rect.top;
+    }
+
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('touchmove', drag);
+    document.addEventListener('mouseup', stopDrag);
+    document.addEventListener('touchend', stopDrag);
+
+    function drag(e) {
+      if (!isDragging) return;
+      
+      e.preventDefault();
+      
+      const x = (e.type === 'mousemove' ? e.clientX : e.touches[0].clientX) - initialX;
+      const y = (e.type === 'mousemove' ? e.clientY : e.touches[0].clientY) - initialY;
+      
+      glass.style.left = `${x}px`;
+      glass.style.top = `${y}px`;
+    }
+
+    function stopDrag() {
+      isDragging = false;
+    }
+
+    // === Mouse Light Effect ===
+    glass.addEventListener('mousemove', e => {
+      const rect = glass.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      glass.style.setProperty('--mx', `${x}%`);
+      glass.style.setProperty('--my', `${y}%`);
+    });
+
+    // === Controls ===
+    function updateStyles() {
+      const blur = document.getElementById('blur').value;
+      const opacity = document.getElementById('opacity').value;
+      const sat = document.getElementById('sat').value;
+      const glow = document.getElementById('glow').value;
+
+      document.documentElement.style.setProperty('--blur', blur + 'px');
+      document.documentElement.style.setProperty('--opacity', opacity);
+      document.documentElement.style.setProperty('--sat', sat + '%');
+      document.documentElement.style.setProperty('--glow', glow + 'px');
+    }
+
+    document.querySelectorAll('input[type="range"]').forEach(input => {
+      input.addEventListener('input', updateStyles);
+    });
+
+    function randomize() {
+      document.getElementById('blur').value = 18 + Math.random() * 25;
+      document.getElementById('opacity').value = 0.07 + Math.random() * 0.15;
+      document.getElementById('sat').value = 150 + Math.random() * 130;
+      document.getElementById('glow').value = 15 + Math.random() * 35;
+      updateStyles();
+    }
+
+    // Init
+    updateStyles();
+  </script>
 </body>
 </html>
